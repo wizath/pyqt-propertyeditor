@@ -1,27 +1,31 @@
-﻿from PyQt4 import QtCore, QtGui
-from Property import *
+﻿from Property import Property
+from PyQt4 import QtCore, QtGui
+
+# todo add property filter that can edit only selected values
 
 
 class PropertyModel(QtCore.QAbstractItemModel):
+    """ Class that creates an Qt model to the MVC so properties can be changed and
+        accessed by the GUI widget. """
 
-    def __init__(self, parent = None, customProperties = {}):
+    def __init__(self, parent=None):
         super(PropertyModel, self).__init__(parent)
-        self._rootNode = Property('Root', None, None)
+        self._root = Property('Root', None, None)
+        self._items = []
 
-        self.customProperties = customProperties
-
-    def getRoot(self):
-        return self._rootNode
+    def get_root(self):
+        return self._root
 
     def rowCount(self, parent):
         if not parent.isValid():
-            parentNode = self._rootNode
+            parent_node = self._root
         else:
-            parentNode = parent.internalPointer()
+            parent_node = parent.internalPointer()
 
-        return parentNode.childCount()
+        return parent_node.childCount()
 
     def columnCount(self, parent):
+        """ Need only 2 columns. One for name and second for value."""
         return 2
 
     def data(self, index, role):
@@ -38,7 +42,7 @@ class PropertyModel(QtCore.QAbstractItemModel):
 
         if role == QtCore.Qt.DecorationRole and index.column() == 1:
             if type(node.property()) == QtGui.QColor:
-                pixmap = QtGui.QPixmap(26,26)
+                pixmap = QtGui.QPixmap(26, 26)
                 pixmap.fill(node.property())
 
                 icon = QtGui.QIcon(pixmap)
@@ -58,58 +62,40 @@ class PropertyModel(QtCore.QAbstractItemModel):
             return QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsUserCheckable
 
     def index(self, row, column, parent):
-        parentNode = self.getNode(parent)
-        childItem = parentNode.child(row)
+        parent_node = self.getNode(parent)
+        child_node = parent_node.child(row)
 
-        if childItem:
-            return self.createIndex(row, column, childItem)
+        if child_node is not None:
+            return self.createIndex(row, column, child_node)
         else:
             return QtCore.QModelIndex()
 
     def parent(self, index):
         node = self.getNode(index)
-        parentNode = node.parent()
+        parent_node = node.parent()
 
-        if parentNode == self._rootNode:
+        if parent_node == self._root:
             return QtCore.QModelIndex()
 
-        return self.createIndex(parentNode.row(), 0, parentNode)
+        return self.createIndex(parent_node.row(), 0, parent_node)
 
     def getNode(self, index):
         if index.isValid():
-            node = index.internalPointer()
-            if node:
-                return node
+            return index.internalPointer()
 
-        return self._rootNode
+        return self._root
 
-    def addItem(self, propertyObject):
-        properties = vars(propertyObject)
-        length = len(properties)
-        self.beginInsertRows(QtCore.QModelIndex(), self.rowCount(self._rootNode), self.rowCount(self._rootNode))
+    def add_property_object(self, obj):
+        properties = vars(obj)
+        self.beginInsertRows(QtCore.QModelIndex(), self.rowCount(self._root), self.rowCount(self._root))
 
         for key, value in properties.items():
-            var = type(value)
+            self._items.append(Property(key, obj, self.get_root()))
 
-            if var in self.customProperties.keys():
-                prop = self.customProperties[var]
-                try:
-                    childNode = prop(key, value, self.getRoot())
-                except:
-                    print 'Error in custom property'''
-            else:
-                childNode = Property(key, value, self.getRoot())
-
-        self.endInsertColumns()
+        self.endInsertRows()
 
     def clear(self):
         self.beginRemoveRows(QtCore.QModelIndex(), 0, self.rowCount(self._rootNode))
-        self._rootNode = Property('Root', None, self)
+        self._root = Property('Root', None, self)
+        self._items = []
         self.endRemoveRows()
-
-    def registerCustom(self, propKey, propVal):
-        self.customProperties[propKey] = propVal
-
-    def unregisterCustom(self, propKey):
-        if propKey in self.customProperties.keys():
-            del self.customProperties[propKey]

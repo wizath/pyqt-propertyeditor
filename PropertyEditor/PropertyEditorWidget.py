@@ -3,8 +3,11 @@ from PropertyModel import PropertyModel
 from TypeDelegate import TypeDelegate
 from CustomProperties import *
 
+# todo add custom property register
+
 
 class PropertyEditorWidget(QtGui.QTreeView):
+    """ Subclassed QTreeView that displays property name & value in tidy manner."""
 
     def __init__(self, parent = None):
         super(PropertyEditorWidget, self).__init__(parent)
@@ -12,12 +15,8 @@ class PropertyEditorWidget(QtGui.QTreeView):
         self.setModel(self._model)
         self.setItemDelegate(TypeDelegate(self))
 
-        self.registerCustom(list, ListProperty)
-        self.registerCustom(QtGui.QColor, ColorProperty)
-        self.registerCustom(dict, DictProperty)
-
     def addObject(self, propertyObject):
-        self._model.addItem(propertyObject)
+        self._model.add_property_object(propertyObject)
         self.expandToDepth(0)
 
     def setObject(self, propertyObject):
@@ -25,9 +24,3 @@ class PropertyEditorWidget(QtGui.QTreeView):
         if propertyObject:
             self._model.addItem(propertyObject)
         self.expandToDepth(0)
-
-    def registerCustom(self, propKey, propVal):
-        self._model.registerCustom(propKey, propVal)
-
-    def unregisterCustom(self, propKey):
-        self._model.unregisterCustom(propKey)

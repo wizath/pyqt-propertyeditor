@@ -45,11 +45,11 @@ class TypeDelegate(QtGui.QItemDelegate):
         var = type(item.property())
         
         if var is int:
-            item.setProperty(editor.value())
+            item.set_property(editor.value())
         elif var is float:
-            item.setProperty(editor.value())
+            item.set_property(editor.value())
         elif var is str:
-            item.setProperty(str(editor.text()))
+            item.set_property(str(editor.text()))
         elif isinstance(item, Property):
             item.setModelData(editor, model, index)
 
@@ -73,4 +73,4 @@ class TypeDelegate(QtGui.QItemDelegate):
 
     def currentValueChanged(self):
         item = self.boolProperties[self.sender()].internalPointer()
-        item.setProperty(self.sender().isChecked())
+        item.set_property(self.sender().isChecked())
